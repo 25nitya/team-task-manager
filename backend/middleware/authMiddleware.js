@@ -1,25 +1,26 @@
 const jwt = require('jsonwebtoken');
 
-const protect = (req, res, next) => {
-    const token = req.header('x-auth-token');
-    if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
+// This function checks the token and lets the request continue
+const auth = (req, res, next) => {
+  // 1. Get token from header
+  const token = req.header('x-auth-token');
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        res.status(401).json({ msg: 'Token is not valid' });
-    }
+  // 2. Check if no token
+  if (!token) {
+    return res.status(401).json({ msg: 'No token, authorization denied' });
+  }
+
+  // 3. Verify token
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Add the user data to the request object
+    req.user = decoded; 
+    
+    next(); // Move to the next step (The Route)
+  } catch (err) {
+    res.status(401).json({ msg: 'Token is not valid' });
+  }
 };
 
-const authorize = (role) => {
-    return (req, res, next) => {
-        if (req.user.role !== role) {
-            return res.status(403).json({ msg: 'Access denied: Requires Admin role' });
-        }
-        next();
-    };
-};
-
-module.exports = { protect, authorize };
+module.exports = auth;
